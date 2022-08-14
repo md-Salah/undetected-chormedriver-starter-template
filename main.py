@@ -1,31 +1,28 @@
-import time
-from helpers.scraper import Scraper
-from selenium.common.exceptions import TimeoutException
+from sys import exit
 import os
 import random
-import pandas as pd
+import time
+from selenium.webdriver.common.keys import Keys
 
-from helpers.functions import read_txt, formatted_time, formatted_number_with_comma, countdown, execution_time, read_csv, write_to_csv
-from helpers.user import generate_user_info
-from helpers.gui import open_file
-
-# Header of the program
-start_time = time.time()
-
-# Body
-url = read_txt('websites.txt')[0]
-scraper = Scraper(url)
+from helpers.scraper import Scraper
+from helpers.utility import formatted_time, data_countdown, countdown, execution_time
+from helpers.files import read_csv, read_txt, write_to_csv, write_to_txt, read_contact_info
+from helpers.numbers import formatted_number_with_comma, numbers_within_text, str_to_int
 
 
-# Footer
-os.system('cls')
-print('Execution Completed\n\nReport:\n================================')
-execution_time(start_time)
 
-os.system('pause')        
-scraper.driver.close()
+if __name__ == "__main__":
+    START_TIME = time.time()
 
-                
 
-        
+    # Body
+    url = 'https://www.Realestate.com.au'
+    d = Scraper(url)
 
+
+    
+    # Footer for reporting
+    execution_time(START_TIME)
+
+    # Finally Close the browser
+    d.driver.quit()

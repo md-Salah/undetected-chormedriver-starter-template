@@ -1,5 +1,10 @@
 import string
 import random
+import os
+from os import listdir
+from os.path import isfile, join
+
+from helpers.files import read_txt
 
 def randomize(option, length):
     # Options:
@@ -35,6 +40,7 @@ def randomize(option, length):
     return _generated_info_
 
 def generate_user_info():
+    
     f_name = randomize('-l',5)
     l_name = randomize('-l',7)
     username= str.lower(randomize('-l',10)) + randomize('-n',4) 
@@ -56,3 +62,15 @@ def generate_user_info():
         'year' : year,
     }
     return user
+
+def get_acc_info():
+    users = read_txt('names.txt')
+    data = []
+    for user in users:
+        user = generate_user_info(user)
+        images = [f for f in listdir('images') if isfile(join('images', f))]
+        index = random.randint(0,len(images)-1)
+        image = os.path.abspath(os.getcwd()) + '\images\\' + images[index]
+        user['img'] = image
+        data.append(user)
+    return data

@@ -2,4 +2,5 @@ cookies
 helpers/_pycache_
 helpers/_init_.py
 inputs/proxies.txt
-
+/t.py
+/Instruction.txt

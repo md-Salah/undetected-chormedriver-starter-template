@@ -1,0 +1,6 @@
+How to Run:
+1. Double Click on script.exe file
+
+
+Cautions:
+1. script.exe And chromedriver.exe file must be in same folder.
