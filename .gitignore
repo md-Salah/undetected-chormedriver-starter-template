@@ -1,9 +1,9 @@
-cookies
+cookies/
 helpers/_pycache_
-inputs/proxies.txt
-/t.py
-/try.py
-/main.spec
-/Instruction.txt
-build
-ScreenShots
+inputs/
+t.py
+try.py
+main.spec
+Instruction.txt
+build/
+ScreenShots/
