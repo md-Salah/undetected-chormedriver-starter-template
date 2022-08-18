@@ -15,14 +15,18 @@ if __name__ == "__main__":
     START_TIME = time.time()
 
 
-    # Body
-    url = 'https://www.Realestate.com.au'
-    d = Scraper(url)
+    # Global variables
+    url = 'https://www.google.com'
+    d = Scraper(url, exit_on_missing_element=True)
+    d.print_executable_path()
 
-
+    print('hello world')
+    
+    
     
     # Footer for reporting
     execution_time(START_TIME)
 
     # Finally Close the browser
+    input('Press any key to exit the browser...')
     d.driver.quit()

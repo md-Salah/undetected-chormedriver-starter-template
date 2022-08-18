@@ -5,6 +5,7 @@ from os import listdir
 from os.path import isfile, join
 
 from helpers.files import read_txt
+from helpers.username import UsernameGenerator
 
 def randomize(option, length):
     # Options:
@@ -40,28 +41,20 @@ def randomize(option, length):
     return _generated_info_
 
 def generate_user_info():
+    ug = UsernameGenerator(8, 12)
+    random_user = {}
     
-    f_name = randomize('-l',5)
-    l_name = randomize('-l',7)
-    username= str.lower(randomize('-l',10)) + randomize('-n',4) 
-    password= randomize('-p',16)
-    email = randomize('-l', 7) + randomize('-n', 3) + '@gmail.com'
-    month= randomize('-m',1)
-    day= randomize('-d',1)
-    year= randomize('-y',1)
+    random_user['f_name'] = randomize('-l',5)
+    random_user['l_name'] = randomize('-l',7)
+    random_user['username'] = ug.generate()
+    random_user['password'] = randomize('-p',16)
+    random_user['email'] = str.lower(randomize('-l', 7) + randomize('-n', 3)) + '@gmail.com'
+    random_user['month'] = randomize('-m',1)
+    random_user['day'] = randomize('-d',1)
+    random_user['year'] = randomize('-y',1)
     # gender= randomize('-g',1)
     
-    user = {
-        'f_name': f_name,
-        'l_name': l_name,
-        'username': username,
-        'password': password,
-        'email': email,
-        'month' : month,
-        'day' : day,
-        'year' : year,
-    }
-    return user
+    return random_user
 
 def get_acc_info():
     users = read_txt('names.txt')
