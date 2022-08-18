@@ -1,6 +1,9 @@
 cookies
 helpers/_pycache_
-helpers/_init_.py
 inputs/proxies.txt
 /t.py
+/try.py
+/main.spec
 /Instruction.txt
+build
+ScreenShots
