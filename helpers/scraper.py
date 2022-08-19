@@ -107,9 +107,8 @@ class Scraper:
         print('headless:    ', self.headless)
         
     # Add login functionality and load cookies if there are any with 'cookies_file_name'
-    def add_login_functionality(self, login_url, is_logged_in_selector, loop_count=10, login_function=None, exit_on_login_failure=True, cookies_file_name='cookies'):
+    def add_login_functionality(self, is_logged_in_selector, loop_count=10, login_function=None, exit_on_login_failure=True, cookies_file_name='cookies'):
         # Three step Login. 1:Using cookies, 2:By Selenium UI automation, 3:Manual login Then press any key
-        self.login_url = login_url
         self.is_logged_in_selector = is_logged_in_selector
         self.cookies_file_name = cookies_file_name + '.pkl'
         self.cookies_file_path = self.cookies_folder + self.cookies_file_name
@@ -205,7 +204,8 @@ class Scraper:
         self.driver.get(url)
 
     def exit_with_exception(self, reason):  # Utility function
-        raise Exception(reason)
+        if input('e: Exit | Press any key to exit...') == 'e':
+            raise Exception(reason)
 
     def find_element(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f', wait_element_time=None):
 
