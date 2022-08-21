@@ -1,5 +1,5 @@
 cookies/
-helpers/_pycache_
+helpers/_pycache_/
 inputs/
 t.py
 try.py
