@@ -20,7 +20,7 @@ if __name__ == "__main__":
     d = Scraper(url, exit_on_missing_element=True)
     d.print_executable_path()
 
-    print('hello world')
+    print('Yee! Browser is open.')
     
     
     

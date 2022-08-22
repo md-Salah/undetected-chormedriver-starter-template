@@ -5,7 +5,7 @@ from sys import exit
 def exit_or_continue(reason):  # Utility function
     print(reason)
     if input('Exit: e | Press any key to continue...') == 'e':
-        exit()
+        raise Exception(reason)
 
 def read_executable_path_info(file_name, split_by='='):
     path_info = dict()

@@ -33,7 +33,7 @@ class Scraper:
     def __init__(self, url, headless=False, proxy=None, exit_on_missing_element = True):
         self.url = url
         self.exit_on_missing_element = exit_on_missing_element        # Wheather we exit or not if we are missing an element
-        self.browser_paths = read_executable_path_info('chrome_path.txt', '=')
+        self.browser_paths = read_executable_path_info('inputs/chrome_path.txt', '=')
         self.browser_executable_path = self.browser_paths['browser'] or None
         self.driver_executable_path = os.path.join(os.getcwd(), self.browser_paths['driver']) if self.browser_paths['driver'] else None
         self.headless = headless or (True if self.browser_paths['headless'].lower() == 'true' else False)
@@ -59,7 +59,7 @@ class Scraper:
             # '--no-sandbox',                                               # with sandbox, one tab cannot watch another tab
             '--disable-popup-blocking',                                     # Otherwise new tab will not be opened
             '--no-first-run --no-service-autorun --password-store=basic',   # just some options passing in to skip annoying popups
-            # '--user-data-dir=c:\\temp\\profile',                            # Saving user profile
+            # '--user-data-dir=c:\\temp\\profile',                          # Saving user profile, It causes the error sometimes like 127.0.0 chrome not found 
         ]
 
         # experimental_options = {
@@ -112,34 +112,32 @@ class Scraper:
         self.is_logged_in_selector = is_logged_in_selector
         self.cookies_file_name = cookies_file_name + '.pkl'
         self.cookies_file_path = self.cookies_folder + self.cookies_file_name
-        self.login_status = False
+        self.login_status = self.is_logged_in(loop_count)
 
         # Step 1: Check if there is a cookie file saved
-        if self.is_cookie_file():
-            self.load_cookies()		# Load cookies
-            # Check if user is logged in after adding the cookies
-            self.login_status = self.is_logged_in(loop_count)
+        if self.login_status == False:
+            if self.is_cookie_file():
+                self.load_cookies()		# Load cookies
+                # Check if user is logged in after adding the cookies
+                self.login_status = self.is_logged_in(loop_count)
 
         # Step 2: Call the login method for Selenium UI interaction login
         if self.login_status == False:
             if login_function:
                 login_function()
-                self.login_status = self.is_logged_in(
-                    loop_count)  # Check if user is logged in
+                self.login_status = self.is_logged_in(loop_count)  # Check if user is logged in
 
         # Step 3: Manual Login
         if self.login_status == False:
-            input('Login manually, then press ENTER...')
+            input('Login manually, Then press ENTER...')
             self.sleep(1.0, 3.0)
-            self.login_status = self.is_logged_in(
-                loop_count)  # Check if user is logged in
+            self.login_status = self.is_logged_in(loop_count)  # Check if user is logged in
 
         if self.login_status == True:
             self.save_cookies()		# User is logged in. So, save the cookies
 
         elif exit_on_login_failure == True:
-            self.exit_with_exception(
-                reason='Sorry, We are failed to be logged In.')
+            self.exit_with_exception(reason='Sorry, We are failed to be logged In.')
 
         return self.login_status
 
@@ -204,7 +202,8 @@ class Scraper:
         self.driver.get(url)
 
     def exit_with_exception(self, reason):  # Utility function
-        if input('e: Exit | Press any key to exit...') == 'e':
+        print(reason)
+        if input('e: Exit | Press any key to continue...') == 'e':
             raise Exception(reason)
 
     def find_element(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f', wait_element_time=None):
@@ -237,9 +236,8 @@ class Scraper:
 
         return None
 
-    def find_elements(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f', wait_element_time=None):
+    def find_elements(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f'):
 
-        wait_element_time = wait_element_time or self.wait_element_time
         driver = ref_element or self.driver
         exit_on_missing_element = self.exit_on_missing_element if exit_on_missing_element == 'f' else exit_on_missing_element
 
@@ -298,10 +296,10 @@ class Scraper:
         time.sleep(sleep_duration)
 
     # Wait random time before cliking on the element
-    def element_click(self, css_selector='', xpath='', element=None, loop_count=1, exit_on_missing_element=True, delay=True):
+    def element_click(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, exit_on_missing_element=True, delay=True):
 
         if css_selector or xpath:
-            element = self.find_element(css_selector=css_selector, xpath=xpath, loop_count=loop_count)
+            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count)
 
         if element:
             if delay:
@@ -318,10 +316,10 @@ class Scraper:
         return element
 
     # Wait random time before sending the keys to the element
-    def element_send_keys(self, text, css_selector='', xpath='', element=None,  clear_input=True, loop_count=1, exit_on_missing_element=True, delay=True):
+    def element_send_keys(self, text, css_selector='', xpath='', element=None, ref_element=None,  clear_input=True, loop_count=1, exit_on_missing_element=True, delay=True):
 
         if css_selector or xpath:
-            element = self.find_element(css_selector=css_selector, xpath=xpath, loop_count=loop_count)
+            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count)
 
         if element:
             if delay:
@@ -349,10 +347,10 @@ class Scraper:
             self.exit_with_exception(reason=f'ERROR: Exiting input_file_add_files! Please check if these file paths are correct:\n {files}')
 
     # Wait random time before clearing the element (popup)
-    def element_clear(self, css_selector='', xpath='', element=None, loop_count=1, exit_on_missing_element=True, delay=True):
+    def element_clear(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, exit_on_missing_element=True, delay=True):
 
         if css_selector or xpath:
-            element = self.find_element(css_selector=css_selector, xpath=xpath, loop_count=loop_count)
+            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count)
 
         if element:
             self.element_click(element=element)

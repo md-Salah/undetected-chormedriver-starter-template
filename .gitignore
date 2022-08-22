@@ -1,9 +1,10 @@
+build/
 cookies/
-helpers/_pycache_
+helpers/_pycache_/
 inputs/
+ScreenShots/
+
+Instruction.txt
 t.py
 try.py
 main.spec
-Instruction.txt
-build/
-ScreenShots/
