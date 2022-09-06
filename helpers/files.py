@@ -43,12 +43,14 @@ def read_contact_info(file_name, split_by=':'):
     
     return contact_info
 
-def read_txt(file_name, exit_on_missing_file=True):
+def read_txt(file_name, exit_on_missing_file=True, single_str=False):
     data = []
     file_dir = os.getcwd() + r"\\" + file_name
     try:
         with open(file_dir, "r", encoding="utf8", errors="surrogateescape") as file:
             str_data = file.read()
+            if single_str:
+                return str_data
             list = str_data.split("\n")
             for line in list:
                 data.append(line.strip())

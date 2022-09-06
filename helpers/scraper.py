@@ -30,7 +30,7 @@ class Scraper:
     cookies_folder = 'cookies' + os.path.sep        # In this folder we will save cookies from logged in users
 
 
-    def __init__(self, url, headless=False, proxy=None, exit_on_missing_element = True):
+    def __init__(self, url='', headless=False, proxy=None, exit_on_missing_element = True, profile='DefaultProfile'):
         self.url = url
         self.exit_on_missing_element = exit_on_missing_element        # Wheather we exit or not if we are missing an element
         self.browser_paths = read_executable_path_info('inputs/chrome_path.txt', '=')
@@ -38,7 +38,7 @@ class Scraper:
         self.driver_executable_path = os.path.join(os.getcwd(), self.browser_paths['driver']) if self.browser_paths['driver'] else None
         self.headless = headless or (True if self.browser_paths['headless'].lower() == 'true' else False)
         
-        self.setup_driver_options(self.headless, proxy)
+        self.setup_driver_options(self.headless, proxy, profile)
         self.setup_driver()
 
     # Automatically close driver on destruction of the object
@@ -48,7 +48,7 @@ class Scraper:
             pass
 
     # Add these options in order to make chrome driver appear as a human instead of detecting it as a bot
-    def setup_driver_options(self, headless, proxy):
+    def setup_driver_options(self, headless, proxy, profile):
         self.driver_options = uc.ChromeOptions()
 
         arguments = [
@@ -59,7 +59,7 @@ class Scraper:
             # '--no-sandbox',                                               # with sandbox, one tab cannot watch another tab
             '--disable-popup-blocking',                                     # Otherwise new tab will not be opened
             '--no-first-run --no-service-autorun --password-store=basic',   # just some options passing in to skip annoying popups
-            # '--user-data-dir=c:\\temp\\profile',                          # Saving user profile, It causes the error sometimes like 127.0.0 chrome not found 
+            f'--user-data-dir=c:\\temp\\{profile}',                          # Saving user profile, It causes the error sometimes like 127.0.0 chrome not found 
         ]
 
         # experimental_options = {
