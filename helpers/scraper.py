@@ -30,13 +30,13 @@ class Scraper:
     cookies_folder = 'cookies' + os.path.sep        # In this folder we will save cookies from logged in users
 
 
-    def __init__(self, url='', headless=False, proxy=None, exit_on_missing_element = True, profile='DefaultProfile'):
+    def __init__(self, url='', headless=False, proxy=None, exit_on_missing_element = False, profile='DefaultProfile'):
         self.url = url
-        self.exit_on_missing_element = exit_on_missing_element        # Wheather we exit or not if we are missing an element
         self.browser_paths = read_executable_path_info('inputs/chrome_path.txt', '=')
         self.browser_executable_path = self.browser_paths['browser'] or None
         self.driver_executable_path = os.path.join(os.getcwd(), self.browser_paths['driver']) if self.browser_paths['driver'] else None
         self.headless = headless or (True if self.browser_paths['headless'].lower() == 'true' else False)
+        self.exit_on_missing_element = exit_on_missing_element or (True if self.browser_paths['exit_on_missing_element'].lower() == 'true' else False)
         
         self.setup_driver_options(self.headless, proxy, profile)
         self.setup_driver()
@@ -98,9 +98,6 @@ class Scraper:
             use_subprocess = True
         )
 
-        self.sleep(3, 4) # Wait for the browser to open properly
-        self.go_to_page(self.url)
-
     def print_executable_path(self):
         print('chrome browser path: ', self.browser_executable_path)
         print('chromedriver path:   ', self.driver_executable_path)
@@ -135,7 +132,6 @@ class Scraper:
 
         if self.login_status == True:
             self.save_cookies()		# User is logged in. So, save the cookies
-
         elif exit_on_login_failure == True:
             self.exit_with_exception(reason='Sorry, We are failed to be logged In.')
 
@@ -182,9 +178,9 @@ class Scraper:
         cookies_file.close()
 
     # Check if user is logged in based on a html element that is visible only for logged in users
-    def is_logged_in(self, loop_count=5):
+    def is_logged_in(self, loop_count=3):
         element = self.find_element(
-            self.is_logged_in_selector, loop_count=loop_count)
+            self.is_logged_in_selector, loop_count=loop_count, exit_on_missing_element=False, wait_element_time=3)
         return True if element else False
 
     # Wait random amount of seconds before taking some action so the server won't be able to tell if you are a bot

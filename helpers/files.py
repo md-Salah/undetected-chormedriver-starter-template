@@ -14,6 +14,7 @@ def read_executable_path_info(file_name, split_by='='):
     path_info['browser'] = None
     path_info['driver'] = None
     path_info['headless'] = 'false'
+    path_info['exit_on_missing_element'] = 'false'
     
     for line in inputs:
         try:
@@ -27,8 +28,8 @@ def read_executable_path_info(file_name, split_by='='):
     
     return path_info
 
-def read_contact_info(file_name, split_by=':'):
-    contact_info = dict()
+def read_txt_in_dict(file_name, split_by=':'):
+    data = dict()
     inputs = read_txt(file_name, exit_on_missing_file=True)
     
     for line in inputs:
@@ -37,11 +38,11 @@ def read_contact_info(file_name, split_by=':'):
             key = parts[0].strip()
             value = parts[1].strip()
         
-            contact_info[key] = value
+            data[key] = value
         except:
             break
     
-    return contact_info
+    return data
 
 def read_txt(file_name, exit_on_missing_file=True, single_str=False):
     data = []
@@ -125,3 +126,16 @@ def write_to_excel(data, labels=None, file_name = 'output.xlsx', alternative_fil
     except Exception as e:
             exit_or_continue(reason=f"Error: Can't write to {file_dir} file.\n{e}")
         
+
+# Work with dataFrame
+def pd_read_csv(file_name, list_of_dictionaries = False, exit_on_empty=True):
+    file_dir = os.getcwd() + "/" + file_name
+
+    try:
+        df = pd.read_csv(file_dir)
+    except Exception as e:
+        if exit_on_empty:
+            exit_or_continue(reason=f'{file_name} is empty.\n{e}')
+        df = pd.DataFrame([])
+    
+    return df

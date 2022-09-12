@@ -1,6 +1,11 @@
 # My files
 cookies/
 inputs/
+!inputs/settings.txt
+*.exe
+*.zip
+*.csv
+
 
 Instruction.txt
 t.py
