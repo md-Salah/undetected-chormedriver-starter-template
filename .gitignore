@@ -1,6 +1,6 @@
 # My files
 cookies/
-inputs/
+inputs/*
 !inputs/settings.txt
 *.exe
 *.zip
