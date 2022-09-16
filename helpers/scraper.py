@@ -32,7 +32,7 @@ class Scraper:
 
     def __init__(self, url='', headless=False, proxy=None, exit_on_missing_element = False, profile='DefaultProfile'):
         self.url = url
-        self.browser_paths = read_executable_path_info('inputs/chrome_path.txt', '=')
+        self.browser_paths = read_executable_path_info('inputs/settings.txt', '=')
         self.browser_executable_path = self.browser_paths['browser'] or None
         self.driver_executable_path = os.path.join(os.getcwd(), self.browser_paths['driver']) if self.browser_paths['driver'] else None
         self.headless = headless or (True if self.browser_paths['headless'].lower() == 'true' else False)
@@ -184,8 +184,11 @@ class Scraper:
         return True if element else False
 
     # Wait random amount of seconds before taking some action so the server won't be able to tell if you are a bot
-    def sleep(self, a=0.10, b=0.50, implicit=False):
-        random_sleep_seconds = round(random.uniform(a, b), 2)
+    def sleep(self, a=0.5, b=None, implicit=False):
+        if b == None:
+            random_sleep_seconds = a
+        else:
+            random_sleep_seconds = round(random.uniform(a, b), 2)
 
         if implicit:
             self.driver.implicitly_wait(random_sleep_seconds)
@@ -204,6 +207,7 @@ class Scraper:
 
     def find_element(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f', wait_element_time=None):
 
+        element, error = None, None
         wait_element_time = wait_element_time or self.wait_element_time
         driver = ref_element or self.driver
         exit_on_missing_element = self.exit_on_missing_element if exit_on_missing_element == 'f' else exit_on_missing_element
@@ -216,28 +220,37 @@ class Scraper:
         else:
             self.exit_with_exception(reason='ERROR: CSS_SELECTOR | XPATH is required to find element')
 
-        for _ in range(loop_count):
+        i = 1
+        while True:
             try:
-                # Wait for element to load
+                print('try')
                 element = WebDriverWait(driver, wait_element_time).until(wait_until)
-                return element
             except TimeoutException:
-                time.sleep(1)
+                pass
             except Exception as e:
-                self.exit_with_exception(e)
-                
+                error = e
+            
+            if i == loop_count or element:
+                break
+            else:
+                i += 1
+                time.sleep(1)
 
-        if exit_on_missing_element:
-            self.exit_with_exception(reason=f'ERROR: Timed out waiting for the element with selector "{css_selector or xpath}" to load')
+        if element:
+            return element
+        elif exit_on_missing_element:
+            self.exit_with_exception(reason=f'ERROR: Timed out waiting for the element with selector "{css_selector or xpath}" to load\n{error}')
 
         return None
 
     def find_elements(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f'):
 
+        elements = [], error = None
         driver = ref_element or self.driver
         exit_on_missing_element = self.exit_on_missing_element if exit_on_missing_element == 'f' else exit_on_missing_element
 
-        for _ in range(loop_count):
+        i = 1
+        while True:
             try:
                 if css_selector:
                     elements = driver.find_elements(By.CSS_SELECTOR, css_selector)
@@ -245,17 +258,22 @@ class Scraper:
                     elements = driver.find_elements(By.XPATH, xpath)
                 else:
                     self.exit_with_exception(reason='ERROR: CSS_SELECTOR | XPATH is required to find elements')
-
-                return elements
-            except TimeoutException:
-                time.sleep(1)
             except Exception as e:
-                self.exit_with_exception(e)
+                error = e
+                pass
+            
+            if i == loop_count or elements:
+                break
+            else:
+                i += 1
+                time.sleep(1)
+        
+        if elements:
+            return elements    
+        elif exit_on_missing_element:
+            self.exit_with_exception(reason=f'ERROR: Timed out waiting for the element with selector "{css_selector or xpath}" to load\n{error}')
 
-        if exit_on_missing_element:
-            self.exit_with_exception(reason=f'ERROR: Timed out waiting for the element with selector "{css_selector or xpath}" to load')
-
-        return None
+        return []
 
     def click_checkbox(self, css_selector='input[type="checkbox"]', index=0, loop_count=1):
         elements = self.find_elements(css_selector=css_selector, loop_count=loop_count)
@@ -265,13 +283,13 @@ class Scraper:
         elements = self.find_elements(css_selector=css_selector, loop_count=loop_count)
         return self.element_click(element=elements[index])
 
-    def select_dropdown(self, css_selector, val, text=False):
+    def select_dropdown(self, css_selector, val='', text=''):
         element = self.find_element(css_selector)
         select = Select(element)
         if text:
-            select.select_by_visible_text(val)
+            select.select_by_visible_text(text)
         else:
-            val = str(val) if type(val) == int else val
+            val = str(val)
             select.select_by_value(val)
 
     def add_emoji(self, selector, text):
@@ -292,43 +310,54 @@ class Scraper:
         time.sleep(sleep_duration)
 
     # Wait random time before cliking on the element
-    def element_click(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, exit_on_missing_element=True, delay=True):
-
-        if css_selector or xpath:
-            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count)
+    def element_click(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, wait_element_time=None, exit_on_missing_element=True, delay=0.5):
+        success, error = False, ''
+        if (css_selector or xpath) and element is None:
+            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count, wait_element_time=wait_element_time, exit_on_missing_element=False)
 
         if element:
             if delay:
-                self.sleep()
+                self.sleep(delay)
+                
             try:
                 element.click()
+                success = True
             except ElementClickInterceptedException:
                 self.element_click_by_javaScript(element=element)
+                success = True
             except Exception as e:
-                self.exit_with_exception(reason=f'Error: Can not click {element} with selector {css_selector or xpath}\n{e}')
-        elif exit_on_missing_element:
-            self.exit_with_exception(f'No element to click with selector {css_selector or xpath}')
+                error = e
         
-        return element
+        if not success and exit_on_missing_element:
+            self.exit_with_exception(f'Cannot click element with selector {css_selector or xpath}\n{error}')
+        
+        return success, element
 
     # Wait random time before sending the keys to the element
-    def element_send_keys(self, text, css_selector='', xpath='', element=None, ref_element=None,  clear_input=True, loop_count=1, exit_on_missing_element=True, delay=True):
+    def element_send_keys(self, text, css_selector='', xpath='', element=None, ref_element=None,  clear_input=True, loop_count=1, wait_element_time=None, exit_on_missing_element=True, delay=0.5):
 
-        if css_selector or xpath:
-            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count)
+        success, error = False, ''
+        if (css_selector or xpath) and element is None:
+            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count, wait_element_time=wait_element_time, exit_on_missing_element=False)
 
         if element:
             if delay:
-                self.sleep()
+                self.sleep(delay)
 
             self.element_click(element=element, delay=False)
             if clear_input:
                 self.element_clear(element=element, delay=False)
-            element.send_keys(text)
-        elif exit_on_missing_element:
-            self.exit_with_exception(f'No element to send keys with selector {css_selector or xpath}')
             
-        return element
+            try:
+                element.send_keys(text)
+                success = True
+            except Exception as e:
+                error = e
+            
+        if not success and exit_on_missing_element:
+            self.exit_with_exception(f'No element to send keys with selector {css_selector or xpath}\n{error}')
+            
+        return success, element
 
     # scraper.input_file_add_files('input[accept="image/jpeg,image/png,image/webp"]', images_path)
     def input_file_add_files(self, css_selector, files, loop_count=1):
@@ -343,24 +372,31 @@ class Scraper:
             self.exit_with_exception(reason=f'ERROR: Exiting input_file_add_files! Please check if these file paths are correct:\n {files}')
 
     # Wait random time before clearing the element (popup)
-    def element_clear(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, exit_on_missing_element=True, delay=True):
+    def element_clear(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, exit_on_missing_element=True, delay=False):
 
+        success, error = False, ''
         if css_selector or xpath:
             element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count)
 
         if element:
-            self.element_click(element=element)
+            self.element_click(element=element, delay=False)
             if delay:
-                self.sleep()
-            element.clear()
+                self.sleep(delay)
+              
+            try:  
+                element.clear()
 
-            if element.get_attribute('value') != '':
-                element.send_keys(Keys.CONTROL + "a")
-                element.send_keys(Keys.DELETE)
-        elif exit_on_missing_element:
-            self.exit_with_exception(f'No element to send keys with selector {css_selector or xpath}')
+                if element.get_attribute('value') != '':
+                    element.send_keys(Keys.CONTROL + "a")
+                    element.send_keys(Keys.DELETE)
+                success = True
+            except Exception as e:
+                error = e
+                
+        if not success and exit_on_missing_element:
+            self.exit_with_exception(f'Cannot send keys with selector {css_selector or xpath}\n{error}')
             
-        return element
+        return success, element
 
     def element_wait_to_be_invisible(self, selector):
         wait_until = EC.invisibility_of_element_located(

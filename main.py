@@ -22,11 +22,14 @@ if __name__ == "__main__":
 
     print('Yee! Browser is open.')
     
+    d.go_to_page('https://www.google.com/search?q=bal+sal')
     
-    
+    START_TIME = time.time()
+    success, ele = d.element_send_keys('hello', 'input', exit_on_missing_element=False, loop_count=2, wait_element_time=2)
+    print(success)
     # Footer for reporting
     execution_time(START_TIME)
 
     # Finally Close the browser
     input('Press any key to exit the browser...')
-    d.driver.quit()
+    d.driver.close()
