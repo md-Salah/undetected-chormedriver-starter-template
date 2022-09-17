@@ -207,7 +207,7 @@ class Scraper:
 
     def find_element(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f', wait_element_time=None):
 
-        element, error = None, None
+        element, error = None, ''
         wait_element_time = wait_element_time or self.wait_element_time
         driver = ref_element or self.driver
         exit_on_missing_element = self.exit_on_missing_element if exit_on_missing_element == 'f' else exit_on_missing_element
@@ -223,7 +223,6 @@ class Scraper:
         i = 1
         while True:
             try:
-                print('try')
                 element = WebDriverWait(driver, wait_element_time).until(wait_until)
             except TimeoutException:
                 pass
@@ -245,7 +244,7 @@ class Scraper:
 
     def find_elements(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f'):
 
-        elements = [], error = None
+        elements, error = [], ''
         driver = ref_element or self.driver
         exit_on_missing_element = self.exit_on_missing_element if exit_on_missing_element == 'f' else exit_on_missing_element
 
