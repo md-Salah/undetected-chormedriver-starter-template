@@ -1,9 +1,7 @@
-# undetected-chormedriver-starter-template
-Starter template to getting started with undetected chromedriver
+# Auto fill contact on JamesEdition.com properties
 
-##installation:
-pip install selenium
-pip install undetected-chromedriver
+## installation:
+pip install -r requirement.txt
 
-##setup
+## setup:
 chrome path, driver & other settings in inputs/settings.txt
