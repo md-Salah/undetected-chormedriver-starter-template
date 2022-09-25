@@ -1,7 +1,11 @@
-# Auto fill contact on JamesEdition.com properties
+# Undetected-chromedriver starter template. 
+This library is based on python selenium. It enhance some feature of selenium and reduces the chances of chrome being suspected as a bot.
+In this starter template I've written all the frequent selenium functionalities in helpers/scraper.py module.
+Pandas and other file system functionalities are given in helpers/files.py module.
+There are other modules. Which are frequently used to start automation or scraping in selenium.
 
-## installation:
+## Installation:
 pip install -r requirement.txt
 
-## setup:
+## Setup:
 chrome path, driver & other settings in inputs/settings.txt
