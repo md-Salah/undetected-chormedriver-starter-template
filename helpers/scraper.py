@@ -1,4 +1,6 @@
 from helpers.files import read_executable_path_info
+from helpers.proxy_plugin import proxy_plugin
+
 import zipfile
 import os
 from sys import exit
@@ -25,20 +27,22 @@ import undetected_chromedriver as uc
 
 class Scraper:
 
-    chrome_version = None                           # Chrome browser version
     wait_element_time = 3                           # The time we are waiting for element to get loaded in the html in each loop count
     cookies_folder = 'cookies' + os.path.sep        # In this folder we will save cookies from logged in users
 
 
-    def __init__(self, url='', headless=False, proxy=None, exit_on_missing_element = False, profile='DefaultProfile'):
-        self.url = url
-        self.browser_paths = read_executable_path_info('inputs/settings.txt', '=')
-        self.browser_executable_path = self.browser_paths['browser'] or None
-        self.driver_executable_path = os.path.join(os.getcwd(), self.browser_paths['driver']) if self.browser_paths['driver'] else None
-        self.headless = headless or (True if self.browser_paths['headless'].lower() == 'true' else False)
-        self.exit_on_missing_element = exit_on_missing_element or (True if self.browser_paths['exit_on_missing_element'].lower() == 'true' else False)
+    def __init__(self, url='', headless='', proxy='', exit_on_missing_element = True, profile=''):
+        settings = read_executable_path_info('inputs/settings.txt', '=')
         
-        self.setup_driver_options(self.headless, proxy, profile)
+        self.url = url
+        self.browser_executable_path = settings['browser'] or None
+        self.driver_executable_path = os.path.join(os.getcwd(), settings['driver']) if settings['driver'] else None
+        self.headless = headless or (True if settings['headless'].lower() == 'true' else False)
+        self.exit_on_missing_element = exit_on_missing_element or (True if settings['exit_on_missing_element'].lower() == 'true' else False)
+        self.chrome_version = settings['chrome_version'] or None
+        self.proxy = proxy or settings['proxy']
+        
+        self.setup_driver_options(self.headless, self.proxy, profile)
         self.setup_driver()
 
     # Automatically close driver on destruction of the object
@@ -59,8 +63,10 @@ class Scraper:
             # '--no-sandbox',                                               # with sandbox, one tab cannot watch another tab
             '--disable-popup-blocking',                                     # Otherwise new tab will not be opened
             '--no-first-run --no-service-autorun --password-store=basic',   # just some options passing in to skip annoying popups
-            f'--user-data-dir=c:\\temp\\{profile}',                          # Saving user profile, It causes the error sometimes like 127.0.0 chrome not found 
         ]
+        
+        if profile:
+            arguments.append(f'--user-data-dir=c:\\temp\\{profile}')     # Saving user profile, It causes the error sometimes like 127.0.0 chrome not found
 
         # experimental_options = {
         #     'excludeSwitches': ['enable-automation', 'enable-logging'],
@@ -73,21 +79,25 @@ class Scraper:
         #     }
         # }
 
-        for argument in arguments:
-            self.driver_options.add_argument(argument)
-
         # for key, value in experimental_options.items():
         # 	self.driver_options.add_experimental_option(key, value)
+
+        for argument in arguments:
+            self.driver_options.add_argument(argument)
 
         if headless:
             self.driver_options.add_argument('--headless')
 
         if proxy:
-            self.driver_options.add_argument(
-                f'--proxy-server={proxy}')     # proxy=106.122.8.54:3128
+            if len(proxy.split(':')) < 2:
+                self.driver_options.add_argument(f'--proxy-server={proxy}')   # proxy=106.122.8.54:3128
+            else:
+                # Proxy with authentication
+                pluginfolder = proxy_plugin(proxy)
+                pluginfolder = os.path.join(os.getcwd(), pluginfolder)
+                self.driver_options.add_argument(f'--load-extension={pluginfolder}')
 
     # Setup chrome driver with predefined options
-
     def setup_driver(self):
 
         self.driver = uc.Chrome(
@@ -99,9 +109,12 @@ class Scraper:
         )
 
     def print_executable_path(self):
-        print('chrome browser path: ', self.browser_executable_path)
-        print('chromedriver path:   ', self.driver_executable_path)
-        print('headless:    ', self.headless)
+        print('chrome browser path:', self.browser_executable_path)
+        print('chromedriver path:', self.driver_executable_path)
+        print('headless:', self.headless)
+        print('Exit:', self.exit_on_missing_element)
+        print('chrome version:', self.chrome_version)
+        print('proxy:', self.proxy)
         
     # Add login functionality and load cookies if there are any with 'cookies_file_name'
     def add_login_functionality(self, is_logged_in_selector, loop_count=10, login_function=None, exit_on_login_failure=True, cookies_file_name='cookies'):
@@ -443,3 +456,22 @@ class Scraper:
         action = ActionChains(self.driver)
         action.move_to_element(element)
         action.perform()
+
+    def close(self, quit=False):
+        try:
+            if quit:
+                self.driver.quit()
+            else:
+                self.driver.close()
+            return True
+        except:
+            return False
+
+    def what_is_my_ip(self, log=True):
+        self.go_to_page('https://api.ipify.org/?format=json')
+        my_ip = self.find_element('body').text
+        my_ip = json.loads(my_ip)
+        if log:
+            print(my_ip)
+            
+        return my_ip['ip']

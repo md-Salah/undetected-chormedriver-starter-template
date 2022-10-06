@@ -2,13 +2,5 @@ browser =
 driver = ../chromedriver.exe
 headless = 
 exit_on_missing_element = 
-
-
-
-
-
-Note:
-browser= The path of the chrome based any browser
-driver= The path to the chromedriver
-headles= Keeps the browser closed if true
-exit_on_missing_element= ignores the exception if true
+chrome_version =
+proxy = 

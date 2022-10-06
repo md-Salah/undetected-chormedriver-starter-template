@@ -11,10 +11,12 @@ def read_executable_path_info(file_name, split_by='='):
     path_info = dict()
     inputs = read_txt(file_name, exit_on_missing_file=False)
     
-    path_info['browser'] = None
-    path_info['driver'] = None
-    path_info['headless'] = 'false'
-    path_info['exit_on_missing_element'] = 'false'
+    path_info['browser'] = ''
+    path_info['driver'] = ''
+    path_info['headless'] = ''
+    path_info['exit_on_missing_element'] = ''
+    path_info['chrome_version'] = ''
+    path_info['proxy'] = ''
     
     for line in inputs:
         try:

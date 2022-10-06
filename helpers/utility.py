@@ -2,6 +2,7 @@ import datetime
 import random
 import os
 import time
+import requests
 
 def formatted_time(t, hours = False):
     m, s = divmod(t, 60)
@@ -33,3 +34,14 @@ def execution_time(start_time, message=''):
 
     if message:
         print(message)
+        
+        
+def what_is_my_ip():
+    res = requests.get('https://api.ipify.org/?format=json')
+    
+    if res.status_code == 200:
+        data = res.json()
+        return data['ip']
+    else:
+        print("can't get api.ipify.org", res)
+        return None
