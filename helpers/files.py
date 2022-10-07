@@ -14,7 +14,7 @@ def read_executable_path_info(file_name, split_by='='):
     path_info['browser'] = ''
     path_info['driver'] = ''
     path_info['headless'] = ''
-    path_info['exit_on_missing_element'] = ''
+    path_info['reaction'] = ''
     path_info['chrome_version'] = ''
     path_info['proxy'] = ''
     

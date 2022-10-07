@@ -1,6 +1,6 @@
 browser = 
 driver = ../chromedriver.exe
 headless = 
-exit_on_missing_element = 
+reaction = 
 chrome_version =
 proxy = 

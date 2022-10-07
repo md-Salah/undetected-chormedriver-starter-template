@@ -1,11 +1,11 @@
 # My files
+proxy_auth_plugin/
 cookies/
 inputs/*
 !inputs/settings.txt
 *.exe
 *.zip
 *.csv
-
 
 Instruction.txt
 t.py

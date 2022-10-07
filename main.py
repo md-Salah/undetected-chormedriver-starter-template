@@ -10,20 +10,22 @@ from helpers.files import read_csv, read_txt, write_to_csv, write_to_txt, read_t
 from helpers.numbers import formatted_number_with_comma, numbers_within_str, str_to_int
 
 def main():
+    d.go_to_page(url)
     pass
-
+    
+    
 if __name__ == "__main__":
     START_TIME = time.time()
 
 
     # Global variables
-    url = 'https://www.google.com/search?q=what+is+my+ip'
+    url = 'https://google.com/'
     d = Scraper()
-    d.print_executable_path()
+    # d.print_executable_path()
     
-    d.go_to_page(url)
-    
+
     main()
+    
     
     # Footer for reporting
     execution_time(START_TIME)

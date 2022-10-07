@@ -1,6 +1,7 @@
 from helpers.files import read_executable_path_info
 from helpers.proxy_plugin import proxy_plugin
 
+import json
 import zipfile
 import os
 from sys import exit
@@ -31,14 +32,14 @@ class Scraper:
     cookies_folder = 'cookies' + os.path.sep        # In this folder we will save cookies from logged in users
 
 
-    def __init__(self, url='', headless='', proxy='', exit_on_missing_element = True, profile=''):
+    def __init__(self, url='', headless='', proxy='', reaction='exit', profile=''):
         settings = read_executable_path_info('inputs/settings.txt', '=')
         
         self.url = url
         self.browser_executable_path = settings['browser'] or None
         self.driver_executable_path = os.path.join(os.getcwd(), settings['driver']) if settings['driver'] else None
         self.headless = headless or (True if settings['headless'].lower() == 'true' else False)
-        self.exit_on_missing_element = exit_on_missing_element or (True if settings['exit_on_missing_element'].lower() == 'true' else False)
+        self.reaction = settings['reaction'] or reaction
         self.chrome_version = settings['chrome_version'] or None
         self.proxy = proxy or settings['proxy']
         
@@ -47,9 +48,7 @@ class Scraper:
 
     # Automatically close driver on destruction of the object
     def __del__(self):
-        if self.headless == False:
-            # print('closing browser')
-            pass
+        pass
 
     # Add these options in order to make chrome driver appear as a human instead of detecting it as a bot
     def setup_driver_options(self, headless, proxy, profile):
@@ -112,7 +111,7 @@ class Scraper:
         print('chrome browser path:', self.browser_executable_path)
         print('chromedriver path:', self.driver_executable_path)
         print('headless:', self.headless)
-        print('Exit:', self.exit_on_missing_element)
+        print('Exit:', self.reaction)
         print('chrome version:', self.chrome_version)
         print('proxy:', self.proxy)
         
@@ -146,7 +145,7 @@ class Scraper:
         if self.login_status == True:
             self.save_cookies()		# User is logged in. So, save the cookies
         elif exit_on_login_failure == True:
-            self.exit_with_exception(reason='Sorry, We are failed to be logged In.')
+            self.handle_exception(reason='Sorry, We are failed to be logged In.', reaction='exit')
 
         return self.login_status
 
@@ -193,7 +192,7 @@ class Scraper:
     # Check if user is logged in based on a html element that is visible only for logged in users
     def is_logged_in(self, loop_count=3):
         element = self.find_element(
-            self.is_logged_in_selector, loop_count=loop_count, exit_on_missing_element=False, wait_element_time=3)
+            self.is_logged_in_selector, loop_count=loop_count, reaction='pause', wait_element_time=3)
         return True if element else False
 
     # Wait random amount of seconds before taking some action so the server won't be able to tell if you are a bot
@@ -213,17 +212,25 @@ class Scraper:
         self.sleep()
         self.driver.get(url)
 
-    def exit_with_exception(self, reason):  # Utility function
-        print(reason)
-        if input('e: Exit | Press any key to continue...') == 'e':
+    def handle_exception(self, reason, reaction=None):  # Utility function handles exit on missing element behavior
+        reaction = reaction or self.reaction    #Default action (exit)
+        
+        if reaction == 'exit':
             raise Exception(reason)
+        elif reaction == 'warning':
+            print(reason) # Warning and Ignore the error
+        elif reaction == 'pause':
+            input(reason) # Pause the execution
+        elif reaction == 'ignore':
+            pass
+        else:
+            raise Exception('Reaction type is not correct')
 
-    def find_element(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f', wait_element_time=None):
+    def find_element(self, css_selector='', xpath='', ref_element=None, loop_count=1, reaction='exit', wait_element_time=None):
 
         element, error = None, ''
         wait_element_time = wait_element_time or self.wait_element_time
         driver = ref_element or self.driver
-        exit_on_missing_element = self.exit_on_missing_element if exit_on_missing_element == 'f' else exit_on_missing_element
 
         # Intialize the condition to wait
         if css_selector:
@@ -231,7 +238,7 @@ class Scraper:
         elif xpath:
             wait_until = EC.visibility_of_element_located((By.XPATH, xpath))
         else:
-            self.exit_with_exception(reason='ERROR: CSS_SELECTOR | XPATH is required to find element')
+            self.handle_exception(reason='ERROR: CSS_SELECTOR | XPATH is required to find element', reaction='exit')
 
         i = 1
         while True:
@@ -250,16 +257,15 @@ class Scraper:
 
         if element:
             return element
-        elif exit_on_missing_element:
-            self.exit_with_exception(reason=f'ERROR: Timed out waiting for the element with selector "{css_selector or xpath}" to load\n{error}')
+        else:
+            self.handle_exception(reason=f'ERROR: Timed out waiting for the element with selector "{css_selector or xpath}" to load\n{error}', reaction=reaction)
 
         return None
 
-    def find_elements(self, css_selector='', xpath='', ref_element=None, loop_count=1, exit_on_missing_element='f'):
+    def find_elements(self, css_selector='', xpath='', ref_element=None, loop_count=1, reaction='exit'):
 
         elements, error = [], ''
         driver = ref_element or self.driver
-        exit_on_missing_element = self.exit_on_missing_element if exit_on_missing_element == 'f' else exit_on_missing_element
 
         i = 1
         while True:
@@ -269,10 +275,9 @@ class Scraper:
                 elif xpath:
                     elements = driver.find_elements(By.XPATH, xpath)
                 else:
-                    self.exit_with_exception(reason='ERROR: CSS_SELECTOR | XPATH is required to find elements')
+                    self.handle_exception(reason='ERROR: CSS_SELECTOR | XPATH is required to find elements', reaction='exit')
             except Exception as e:
                 error = e
-                pass
             
             if i == loop_count or elements:
                 break
@@ -282,8 +287,8 @@ class Scraper:
         
         if elements:
             return elements    
-        elif exit_on_missing_element:
-            self.exit_with_exception(reason=f'ERROR: Timed out waiting for the element with selector "{css_selector or xpath}" to load\n{error}')
+        else:
+            self.handle_exception(reason=f'ERROR: Timed out waiting for the element with selector "{css_selector or xpath}" to load\n{error}', reaction=reaction)
 
         return []
 
@@ -322,10 +327,10 @@ class Scraper:
         time.sleep(sleep_duration)
 
     # Wait random time before cliking on the element
-    def element_click(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, wait_element_time=None, exit_on_missing_element=True, delay=0.5):
+    def element_click(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, wait_element_time=None, reaction='exit', delay=0.5):
         success, error = False, ''
         if (css_selector or xpath) and element is None:
-            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count, wait_element_time=wait_element_time, exit_on_missing_element=False)
+            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count, reaction=reaction, wait_element_time=wait_element_time)
 
         if element:
             if delay:
@@ -340,25 +345,25 @@ class Scraper:
             except Exception as e:
                 error = e
         
-        if not success and exit_on_missing_element:
-            self.exit_with_exception(f'Cannot click element with selector {css_selector or xpath}\n{error}')
+        if not success:
+            self.handle_exception(f'Cannot click element {element} with selector {css_selector or xpath}\n{error}', reaction=reaction)
         
         return success, element
 
     # Wait random time before sending the keys to the element
-    def element_send_keys(self, text, css_selector='', xpath='', element=None, ref_element=None,  clear_input=True, loop_count=1, wait_element_time=None, exit_on_missing_element=True, delay=0.5):
+    def element_send_keys(self, text, css_selector='', xpath='', element=None, ref_element=None,  clear_input=True, loop_count=1, wait_element_time=None, reaction='exit', delay=0.5):
 
         success, error = False, ''
         if (css_selector or xpath) and element is None:
-            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count, wait_element_time=wait_element_time, exit_on_missing_element=False)
+            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count, wait_element_time=wait_element_time, reaction=reaction)
 
         if element:
             if delay:
                 self.sleep(delay)
 
-            self.element_click(element=element, delay=False)
+            self.element_click(element=element, delay=False, reaction=reaction)
             if clear_input:
-                self.element_clear(element=element, delay=False)
+                self.element_clear(element=element, delay=False, reaction=reaction)
             
             try:
                 element.send_keys(text)
@@ -366,29 +371,29 @@ class Scraper:
             except Exception as e:
                 error = e
             
-        if not success and exit_on_missing_element:
-            self.exit_with_exception(f'No element to send keys with selector {css_selector or xpath}\n{error}')
+        if not success:
+            self.handle_exception(f'Cannot send keys with selector {css_selector or xpath}\n{error}', reaction=reaction)
             
         return success, element
 
     # scraper.input_file_add_files('input[accept="image/jpeg,image/png,image/webp"]', images_path)
-    def input_file_add_files(self, css_selector, files, loop_count=1):
+    def input_file_add_files(self, css_selector, files, loop_count=1, reaction='exit'):
         input_file = self.find_element(
-            css_selector=css_selector, loop_count=loop_count)
+            css_selector=css_selector, loop_count=loop_count, reaction=reaction)
 
         self.sleep()
 
         try:
             input_file.send_keys(files)
         except InvalidArgumentException:
-            self.exit_with_exception(reason=f'ERROR: Exiting input_file_add_files! Please check if these file paths are correct:\n {files}')
+            self.handle_exception(reason=f'ERROR: Exiting input_file_add_files! Please check if these file paths are correct:\n {files}', reaction='exit')
 
     # Wait random time before clearing the element (popup)
-    def element_clear(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, exit_on_missing_element=True, delay=False):
+    def element_clear(self, css_selector='', xpath='', element=None, ref_element=None, loop_count=1, reaction='exit', delay=False):
 
         success, error = False, ''
-        if css_selector or xpath:
-            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count)
+        if (css_selector or xpath) and element is None:
+            element = self.find_element(css_selector=css_selector, xpath=xpath, ref_element=ref_element, loop_count=loop_count, reaction=reaction)
 
         if element:
             self.element_click(element=element, delay=False)
@@ -405,8 +410,8 @@ class Scraper:
             except Exception as e:
                 error = e
                 
-        if not success and exit_on_missing_element:
-            self.exit_with_exception(f'Cannot send keys with selector {css_selector or xpath}\n{error}')
+        if not success:
+            self.handle_exception(f'Cannot clear element {element} with selector {css_selector or xpath}\n{error}', reaction=reaction)
             
         return success, element
 
@@ -418,7 +423,7 @@ class Scraper:
             WebDriverWait(self.driver, self.wait_element_time).until(
                 wait_until)
         except:
-            self.exit_with_exception(
+            self.handle_exception(
                 reason=f'Error: waiting the element with selector {selector} to be invisible')
 
     def open_new_tab(self, url):
@@ -470,8 +475,9 @@ class Scraper:
     def what_is_my_ip(self, log=True):
         self.go_to_page('https://api.ipify.org/?format=json')
         my_ip = self.find_element('body').text
-        my_ip = json.loads(my_ip)
+        if my_ip:
+            my_ip = json.loads(my_ip)
         if log:
-            print(my_ip)
+            print(my_ip['ip'])
             
         return my_ip['ip']
