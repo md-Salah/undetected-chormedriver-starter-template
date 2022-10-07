@@ -1,5 +1,5 @@
-from helpers.files import read_executable_path_info
-from helpers.proxy_plugin import proxy_plugin
+from modules.files import read_executable_path_info
+from modules.proxy_plugin import proxy_plugin
 
 import json
 import zipfile

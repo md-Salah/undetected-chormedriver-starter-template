@@ -1,5 +1,5 @@
 import gspread
-from helpers.files import read_contact_info
+from modules.files import read_contact_info
 
 def gsheet():
     info = read_contact_info('inputs/gsheet_info.txt', '=')

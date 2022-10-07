@@ -4,8 +4,8 @@ import os
 from os import listdir
 from os.path import isfile, join
 
-from helpers.files import read_txt
-from helpers.username import UsernameGenerator
+from modules.files import read_txt
+from modules.username import UsernameGenerator
 
 def randomize(option, length):
     # Options:
