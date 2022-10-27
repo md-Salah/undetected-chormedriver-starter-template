@@ -1,6 +1,7 @@
 browser = 
-driver = ../chromedriver.exe
+driver = 
+chrome_version = 106
 headless = 
-reaction = 
-chrome_version =
+on_failure =
+captcha_extension = 
 proxy = 

@@ -20,7 +20,7 @@ def countdown(t, message='Waiting'):
         print(f'\r{message}: {timer}', end="") 
         time.sleep(1) 
         t -= 1
-    print('\rWaiting is over')
+    print('')
     
 def data_countdown(message='More Data Collected', time_gap=None):
     print(f'\r{message}', end="")
@@ -35,7 +35,9 @@ def execution_time(start_time, message=''):
     if message:
         print(message)
         
-        
+def required_time(start_time, message='Required time'):
+    print(f'{message} :', datetime.timedelta(seconds= int(time.time() - start_time)))
+
 def what_is_my_ip():
     res = requests.get('https://api.ipify.org/?format=json')
     

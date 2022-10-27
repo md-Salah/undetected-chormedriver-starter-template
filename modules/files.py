@@ -1,38 +1,43 @@
 import pandas as pd
+from pandas.errors import EmptyDataError
 import os
 from sys import exit
 
-def exit_or_continue(reason):  # Utility function
-    print(reason)
-    if input('Exit: e | Press any key to continue...') == 'e':
-        raise Exception(reason)
+def read_txt(file_name, data_format='list'):
+    data = []
+    file_dir = os.path.join(os.getcwd(), file_name)
+    try:
+        with open(file_dir, "r", encoding="utf8", errors="surrogateescape") as file:
+            str_data = file.read().strip()
+            
+            if data_format == 'str':
+                return str_data
+            elif data_format == 'list':
+                if str_data:
+                    lines = str_data.split('\n')
+                    [data.append(line.strip()) for line in lines]   
+            else:
+                raise ValueError(f'data_format must be either list or str, You have given "{data_format}"')
+    except FileNotFoundError:
+        print(f'File "{file_name}" not found in path "{file_dir}"')
+        exit()
+    
+    return data
+    # data = ['a', 'b', 'c', 'd']
 
-def read_executable_path_info(file_name, split_by='='):
-    path_info = dict()
-    inputs = read_txt(file_name, exit_on_missing_file=False)
-    
-    path_info['browser'] = ''
-    path_info['driver'] = ''
-    path_info['headless'] = ''
-    path_info['reaction'] = ''
-    path_info['chrome_version'] = ''
-    path_info['proxy'] = ''
-    
-    for line in inputs:
-        try:
-            parts = line.split(split_by)
-            key = parts[0].strip()
-            value = parts[1].strip()
-        
-            path_info[key] = value
-        except:
-            pass
-    
-    return path_info
+def write_to_txt(data, file_name='output.txt', lablel=False):
+    file_dir = os.path.join(os.getcwd(), file_name)
+
+    with open(file_dir, "w") as file:
+        # data = ['a', 'b', 'c', 'd']
+        if lablel:
+            file.write(f'{lablel}\n')
+        for line in data:
+            file.write(f'{line}\n')
 
 def read_txt_in_dict(file_name, split_by=':'):
     data = dict()
-    inputs = read_txt(file_name, exit_on_missing_file=True)
+    inputs = read_txt(file_name)
     
     for line in inputs:
         try:
@@ -41,103 +46,66 @@ def read_txt_in_dict(file_name, split_by=':'):
             value = parts[1].strip()
         
             data[key] = value
-        except:
-            break
+        except IndexError:
+            pass
     
     return data
 
-def read_txt(file_name, exit_on_missing_file=True, single_str=False):
-    data = []
-    file_dir = os.getcwd() + r"\\" + file_name
-    try:
-        with open(file_dir, "r", encoding="utf8", errors="surrogateescape") as file:
-            str_data = file.read()
-            if single_str:
-                return str_data
-            list = str_data.split("\n")
-            for line in list:
-                data.append(line.strip())
-    except Exception as e:
-        if exit_on_missing_file:
-            exit_or_continue(reason=f'{file_name} not found in {file_dir}\n{e}')
-    
-    # data = ['a', 'b', 'c', 'd']
-    return data
-
-def write_to_txt(data, lable=False, file_name='output.txt'):
-    file_dir = os.getcwd() + "/" + file_name
-    try:
-        with open(file_dir, "w") as file:
-            # data = ['a', 'b', 'c', 'd']
-            if lable:
-                file.write(f'{lable}\n')
-            for line in data:
-                file.write(f'{line}\n')
-    except PermissionError:
-        exit_or_continue(reason=f'Permission error, please close the file {file_dir}')
-    except Exception as e:
-        exit_or_continue(reason=f'{file_name} not found in {file_dir}\n{e}')
-
-def read_csv(file_name, list_of_dictionaries = False, exit_on_empty=True):
-    file_dir = os.getcwd() + "/" + file_name
+def read_csv(file_name, data_format='list', exit_on_missing_file=True):
+    file_dir = os.path.join(os.getcwd(), file_name)
     data = []
     try:
         df = pd.read_csv(file_dir)
-        if list_of_dictionaries:
+        if data_format == 'dict':
             data = df.to_dict('records')
         else:
             data = df.values.tolist()
-    except Exception as e:
-        if exit_on_empty:
-            exit_or_continue(reason=f'{file_name} is empty.\n{e}')
-    
+    except EmptyDataError:
+        data = []
+    except FileNotFoundError:
+        if exit_on_missing_file:
+            print(f'File "{file_name}" not found in path "{file_dir}"')
+            exit()
+        
     # Returning data as a list
     return data
 
-def write_to_csv(data, labels=None, file_name = 'output.csv', alternative_filename = ''):
-    file_dir = os.getcwd() + "/" + file_name
-    alt_file_dir = os.getcwd() + "/" + alternative_filename
+def write_to_csv(data, labels=None, file_name = 'output.csv', excel_file = False):
+    file_dir = os.path.join(os.getcwd(), file_name)
         
     header = True if labels else False
     
     try:
-        pd.DataFrame(data, columns=labels).to_csv(file_dir, index=False, header=header)
-    except PermissionError:
-        if alternative_filename != '':
-            pd.DataFrame(data, columns=labels).to_csv(alt_file_dir, index=False, header=header)
+        df = pd.DataFrame(data, columns=labels)
+        if excel_file:
+            df.to_excel(file_dir, index=False, header=header)
         else:
-            exit_or_continue(reason=f"PermissionError: Can't write to {file_dir} file, Close the file first")
-    except Exception as e:
-            exit_or_continue(reason=f"Error: Can't write to {file_dir} file.\n{e}")
-
-
-def write_to_excel(data, labels=None, file_name = 'output.xlsx', alternative_filename= ''):
-    header = True if labels else False
-    
-    file_dir = os.getcwd() + "/" + file_name
-    alt_file_dir = os.getcwd() + "/" + alternative_filename    
-    
-    
-    try:
-        pd.DataFrame(data, columns=labels).to_excel(file_dir, index=False, header=header)
+            df.to_csv(file_dir, index=False, header=header)
     except PermissionError:
-        if alternative_filename != '':
-            pd.DataFrame(data, columns=labels).to_csv(alt_file_dir, index=False, header=header)
-        else:
-            exit_or_continue(reason=f"PermissionError: Can't write to {file_dir} file, Close the file first")
-    except Exception as e:
-            exit_or_continue(reason=f"Error: Can't write to {file_dir} file.\n{e}")
+        print(f"PermissionError: Your file {file_name} is open with another application, Close the file first.")
+        input('Then press Anykey to continue execution...')
+        write_to_csv(data, labels, file_name, excel_file)
+
+def read_executable_path_info(file_name='inputs/settings.txt', split_by='='):
+    settings = dict()
+    inputs = read_txt(file_name)
+    settings = {}
+    
+    for line in inputs:
+        try:
+            parts = line.split(split_by)
+            key = parts[0].strip()
+            value = parts[1].strip()
+            
+            if value:
+                if key in ['browser', 'driver', 'chrome_version', 'proxy', 'on_failure']:
+                    settings[key] = value
+                elif key in ['headless', 'captcha_extension']:
+                    settings[key] = True if value.lower() in ['true', 'yes'] else False
+                else:
+                    settings[key] = value
+        except:
+            pass
         
-
-# Work with dataFrame
-def pd_read_csv(file_name, list_of_dictionaries = False, exit_on_empty=True):
-    file_dir = os.getcwd() + "/" + file_name
-
-    try:
-        df = pd.read_csv(file_dir)
-    except Exception as e:
-        if exit_on_empty:
-            exit_or_continue(reason=f'{file_name} is empty.\n{e}')
-        df = pd.DataFrame([])
-    
-    return df
+    # print(settings)    
+    return settings
