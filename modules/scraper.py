@@ -14,7 +14,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, StaleElementReferenceException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, StaleElementReferenceException, NoSuchElementException, ElementNotInteractableException
 from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
@@ -253,34 +253,25 @@ class Scraper:
             
     def find_elements(self, css_selector='', xpath='', ref_element=None, loop_count=1, on_failure='default'):
 
-        elements, error = [], ''
+        elements = []
         driver = ref_element or self.driver
 
         i = 1
         while True:
-            try:
-                if css_selector:
-                    elements = driver.find_elements(By.CSS_SELECTOR, css_selector)
-                elif xpath:
-                    elements = driver.find_elements(By.XPATH, xpath)
-                else:
-                    self.handle_exception(reason='ERROR: CSS_SELECTOR | XPATH is required to find elements', on_failure='exit')
-            except TimeoutException:
-                error = f'ERROR: Timed out waiting for the element "{css_selector or xpath}" to load'
-            except Exception as e:
-                error = f'Unknown exception to find elements "{css_selector or xpath}". Exception: {e}'
-            
+            if css_selector:
+                elements = driver.find_elements(By.CSS_SELECTOR, css_selector)
+            elif xpath:
+                elements = driver.find_elements(By.XPATH, xpath)
+            else:
+                self.handle_exception('ERROR: CSS_SELECTOR | XPATH is required to find elements', on_failure='exit')
+
             if i == loop_count or elements:
                 break
             else:
                 i += 1
                 time.sleep(1)
         
-        if elements:
-            return elements    
-        else:
-            self.handle_exception(error, on_failure)
-            return []
+        return elements
 
     def click_checkbox(self, elements, index=0):
         if elements:
@@ -294,22 +285,21 @@ class Scraper:
             if delay:
                 self.sleep(delay)
             
-            if text:
-                try:
+            try:
+                if text:
                     select.select_by_visible_text(text)
                     return True
-                except NoSuchElementException:
-                    return False
-            elif val:
-                try:
-                    select.select_by_value(val)
+                elif val:
+                    select.select_by_value(val)   
                     return True
-                except NoSuchElementException:
-                    return False
-            else:
-                self.handle_exception('Failed to select dropdown. Text or val must be given.', 'exit')
+                else:
+                    self.handle_exception('Failed to select dropdown. Text or value must be given.', 'exit')
+            except NoSuchElementException:
+                self.handle_exception(f'Failed to select dropdown. No option found for {text or val}', on_failure)
         else:
             self.handle_exception(f'Failed to select dropdown. element is None.', on_failure)
+        
+        return False
             
     def add_emoji(self, selector, text):
         JS_ADD_TEXT_TO_INPUT = """
@@ -323,12 +313,11 @@ class Scraper:
         element.send_keys(Keys.BACKSPACE)
         element.send_keys(Keys.TAB)
 
-    def scroll_wait(self, element, sleep_duration=2):
+    def scroll(self, element=None):
         if element:
             self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'auto',block: 'center',inline: 'center'});", element)
-            time.sleep(sleep_duration)
         else:
-            self.handle_exception('Unable to scrollIntoView. Element is None.')
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
     def element_click(self, element, on_failure='default', delay=0.5):
         if element:
@@ -347,7 +336,7 @@ class Scraper:
         return False
 
     # Wait random time before sending the keys to the element
-    def element_send_keys(self, element, text, on_failure='default', clear_input=True, char_by_char=False, delay=0.5):
+    def element_send_keys(self, element, text, on_failure='default', click_input=False, clear_input=False, char_by_char=False, delay=0.5):
         if text is None:
             self.handle_exception(f'Unable to send keys. Text is None.', on_failure)
             
@@ -356,11 +345,13 @@ class Scraper:
                 time.sleep(delay)
                 
             try:
-                element.click()
+                if click_input:
+                    self.element_click(element, on_failure='ignore', delay=None)
                 if clear_input:
                     element.clear()
             
                 if char_by_char:
+                    text = str(text)
                     for t in text:
                         element.send_keys(t)
                         self.sleep(0.01, 0.2)
@@ -443,9 +434,14 @@ class Scraper:
         return logs
 
     def move_to_element(self, element):
-        action = ActionChains(self.driver)
-        action.move_to_element(element)
-        action.perform()
+        try:
+            action = ActionChains(self.driver)
+            action.move_to_element(element)
+            action.perform()
+            return True
+        except ElementNotInteractableException:
+            return False
+            
 
     def close(self, quit=False):
         try:

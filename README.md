@@ -5,7 +5,7 @@ Pandas and other file system functionalities are implemented in modules/files.py
 There are other modules. Which are frequently used to start automation or scraping in selenium.
 
 ## Installation:
-pip install -r requirement.txt
+pip install -r req.txt
 
 ## Setup:
 chrome path, driver & other settings in inputs/settings.txt (Optional)
