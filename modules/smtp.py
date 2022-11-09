@@ -37,7 +37,8 @@ class Smtp:
             self.is_logged_in = True
             # print('SMTP connected.')
         except Exception as e:
-            print(f'Email: {EMAIL}, SMTP server error: {e}')
+            print(f'Email: {EMAIL}, Exception: {e}')
+            # exit()
     
     def logout(self):
         self.mail.quit()

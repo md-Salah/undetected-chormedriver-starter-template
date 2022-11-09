@@ -28,7 +28,7 @@ class Imap:
             self.is_logged_in = True
             # print('Imap connected.')
         except Exception as e:
-            print(f'Email: {EMAIL}, Failed to connect imap server. {e}')
+            print(f'Email: {EMAIL}, Exception: {e}')
             # exit()
 
     def logout(self):
