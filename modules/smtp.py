@@ -32,16 +32,12 @@ class Smtp:
             
         try:
             self.mail = SMTP_SSL(SERVER, port=PORT)
-            # mail.set_debuglevel(1)  # Show SMTP server interactions
+            # self.mail.set_debuglevel(1)  # Show SMTP server interactions
+            self.mail.login(EMAIL, PASSWORD)
+            self.is_logged_in = True
+            # print('SMTP connected.')
         except Exception as e:
             print(f'Email: {EMAIL}, SMTP server error: {e}')
-            
-        try:
-            self.mail.login(EMAIL, PASSWORD)
-            self.isLoggedIn = True
-        except Exception as e:
-            print(f'Email: {EMAIL}, Failed to login on smtp: {e}')
-            # exit()
     
     def logout(self):
         self.mail.quit()

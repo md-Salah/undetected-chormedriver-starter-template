@@ -24,15 +24,11 @@ class Imap:
             
         try:
             self.mail = imaplib.IMAP4_SSL(SERVER)
-        except:
-            print(f'Email: {EMAIL}, Failed to connect imap server')
-            # exit()
-        
-        try:
             self.mail.login(EMAIL, PASSWORD)
-            self.isLoggedIn = True
+            self.is_logged_in = True
+            # print('Imap connected.')
         except Exception as e:
-            print(f'Email: {EMAIL}, Failed to login on imap: {e}')
+            print(f'Email: {EMAIL}, Failed to connect imap server. {e}')
             # exit()
 
     def logout(self):
@@ -59,12 +55,10 @@ class Imap:
         
     def fetch_message(self, id, console_print=False):
         status, data = self.mail.fetch(id, '(RFC822)')
-        message = None
+        message, msg_body = None, []
 
         for response_part in data:
             if isinstance(response_part, tuple):
-                
-                # print(response_part)
                 message = email.message_from_bytes((response_part[1]))
                 
                 if console_print:
@@ -77,13 +71,17 @@ class Imap:
                     print("In-Reply-To:", message['In-Reply-To'])
                     print("References:", message['References'])
                     print("Body:")
-                    for i, part in enumerate(message.walk()):
-                        # print('content type:', part.get_content_type())
-                        if part.get_content_type() == 'text/plain':
-                            print(f'--------Part[{i}]--------')
-                            print(part.get_payload(decode=True).decode('UTF-8'))
+                for i, part in enumerate(message.walk()):
+                    # print('content type:', part.get_content_type())
+                    if part.get_content_type() == 'text/plain':
+                        text = part.get_payload(decode=True).decode('UTF-8')
+                        if text:
+                            msg_body.append(text)
+                            if console_print:
+                                print(f'--------Part[{i}]--------')
+                                print(text)
         
-        return status, message
+        return status, message, msg_body
 
 
     # new_msg = send_mail_multi({'From': f'{USER}', 'To': f'{from_email}'}, 'Hello my frendo', orig=msg)

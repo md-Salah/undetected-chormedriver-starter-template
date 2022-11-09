@@ -1,4 +1,4 @@
-# from modules.proxy_plugin import proxy_plugin
+from modules.proxy_plugin import proxy_plugin
 from modules.files import read_executable_path_info
 
 import json
@@ -20,7 +20,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
-from fake_useragent import UserAgent
+# from fake_useragent import UserAgent
 from multiprocessing import freeze_support
 freeze_support()
 import undetected_chromedriver as uc
