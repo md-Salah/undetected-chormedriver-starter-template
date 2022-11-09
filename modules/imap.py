@@ -74,7 +74,7 @@ class Imap:
                 for i, part in enumerate(message.walk()):
                     # print('content type:', part.get_content_type())
                     if part.get_content_type() == 'text/plain':
-                        text = part.get_payload(decode=True).decode('UTF-8')
+                        text = part.get_payload(decode=True).decode('UTF-8').strip()
                         if text:
                             msg_body.append(text)
                             if console_print:
@@ -83,8 +83,4 @@ class Imap:
         
         return status, message, msg_body
 
-
-    # new_msg = send_mail_multi({'From': f'{USER}', 'To': f'{from_email}'}, 'Hello my frendo', orig=msg)
-
-    # smtp_send_email(USER, from_email, new_msg.as_bytes())
                 

@@ -44,7 +44,7 @@ class Smtp:
         self.mail.quit()
         print('Successfully logged out from SMTP server')
         
-    def send_email(self, mailtext, headers={}, mailhtml=None, files=[], origin=None):
+    def send_email(self, mailtext, headers, mailhtml=None, files=[], origin=None):
         msg = MIMEMultipart('mixed')
         body = MIMEMultipart('alternative')
         
